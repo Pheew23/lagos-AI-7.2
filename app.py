@@ -98,7 +98,7 @@ with st.sidebar:
 
 # --- 4. PEMASANGAN API KEY NVIDIA LANGSUNG ---
 BASE_URL = "https://integrate.api.nvidia.com/v1"
-nvidia_api_key = "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"
+nvidia_api_key = "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"
 
 client = OpenAI(base_url=BASE_URL, api_key=nvidia_api_key)
 
@@ -137,11 +137,12 @@ if user_input:
     with st.chat_message("assistant"):
         try:
             response_stream = client.chat.completions.create(
-                model="moonshotai/kimi-k2.6",
+                model="deepseek-ai/deepseek-v4-flash",
                 messages=st.session_state.messages,
-                temperature=0.3,
-                max_tokens=2048,
-                stream=True
+                temperature=1,
+                top_p=0.95,
+                max_tokens=16384,
+                stream=false
             )
             
             def teks_generator():
