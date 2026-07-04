@@ -6,15 +6,15 @@ from docx import Document
 
 # --- 1. KONFIGURASI UTAMA STREAMLIT ---
 st.set_page_config(
-    page_title="DeepSeek V4 Shared Workspace",
-    page_icon="🤖",
+    page_title="DeepSeek V4 Flash Shared Workspace",
+    page_icon="⚡",
     layout="wide"
 )
 
 # --- 2. FUNGSI UNTUK MEMBUAT FILE WORD (.DOCX) DENGAN FORMAT BENAR ---
 def buat_file_word(riwayat_pesan):
     doc = Document()
-    doc.add_heading('Draf Hasil Kerja AI - DeepSeek V4 Workspace', level=0)
+    doc.add_heading('Draf Hasil Kerja AI - DeepSeek V4 Flash Workspace', level=0)
     
     for msg in riwayat_pesan:
         if msg["role"] == "system":
@@ -67,8 +67,8 @@ def buat_file_word(riwayat_pesan):
 
 # --- 3. PANEL CONTROL SIDEBAR ---
 with st.sidebar:
-    st.title("🤖 Kontrol AI")
-    st.info("⚡ Status Server: Terhubung Otomatis (DeepSeek V4 Active)")
+    st.title("⚡ Kontrol AI")
+    st.info("⚡ Status Server: Terhubung Otomatis (DeepSeek V4 Flash Active)")
     
     st.divider()
     st.markdown("### 📥 Ekspor Dokumen")
@@ -77,7 +77,7 @@ with st.sidebar:
         st.download_button(
             label="📥 Download Jadi Word (.docx)",
             data=file_word,
-            file_name="Draf_LagosAi_DeepSeek.docx",
+            file_name="Draf_LagosAi_DeepSeek_Flash.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             use_container_width=True
         )
@@ -90,22 +90,22 @@ with st.sidebar:
             del st.session_state[key]
         st.rerun()
 
-# --- 4. PEMASANGAN API KEY & KONFIGURASI DEEPSEEK V4 NVIDIA ---
-BASE_URL = "https://integrate.api.nvidia.com/v1"
+# --- 4. PEMASANGAN API KEY & KONFIGURASI DEEPSEEK V4 FLASH NVIDIA ---
+BASE_URL = "https://nvidia.com"
 nvidia_api_key = "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"
-MODEL_NAME = "deepseek-ai/deepseek-v4"
+MODEL_NAME = "deepseek-ai/deepseek-v4-flash"
 
 client = OpenAI(base_url=BASE_URL, api_key=nvidia_api_key)
 
 # --- 5. MANAJEMEN MEMORI CHAT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "Anda adalah DeepSeek V4, model bahasa besar canggih yang di-host di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
+        {"role": "system", "content": "Anda adalah DeepSeek V4 Flash, model bahasa besar super cepat dari DeepSeek yang di-host di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
     ]
 
 # --- 6. TAMPILAN UTAMA INTERFASE CHAT ---
-st.title("🔮 Lagos AI 7.3 (DeepSeek V4)")
-st.caption("Workspace ditenagai oleh model deepseek-ai/deepseek-v4 melalui NVIDIA API.")
+st.title("🔮 Lagos AI 7.3 (DeepSeek V4 Flash)")
+st.caption("Workspace ditenagai oleh model deepseek-ai/deepseek-v4-flash melalui NVIDIA API.")
 
 # Menampilkan riwayat chat secara beruntun ke bawah
 for message in st.session_state.messages:
@@ -151,3 +151,4 @@ if user_input:
             
         except Exception as e:
             st.error(f"Gagal memproses teks. Detail: {e}")
+            
