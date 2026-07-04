@@ -1,6 +1,3 @@
-import streamlit as st
-import requests
-import json
 import io
 import re
 from docx import Document
