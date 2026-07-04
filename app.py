@@ -6,7 +6,7 @@ from docx import Document
 
 # --- 1. KONFIGURASI UTAMA STREAMLIT ---
 st.set_page_config(
-    page_title="Mistral Medium 3.5 Shared Workspace",
+    page_title="GPT OSS 120B Shared Workspace",
     page_icon="🔮",
     layout="wide"
 )
@@ -14,7 +14,7 @@ st.set_page_config(
 # --- 2. FUNGSI UNTUK MEMBUAT FILE WORD (.DOCX) DENGAN FORMAT BENAR ---
 def buat_file_word(riwayat_pesan):
     doc = Document()
-    doc.add_heading('Draf Hasil Kerja AI - Mistral Workspace', level=0)
+    doc.add_heading('Draf Hasil Kerja AI - GPT OSS 120B Workspace', level=0)
     
     for msg in riwayat_pesan:
         if msg["role"] == "system":
@@ -35,18 +35,14 @@ def buat_file_word(riwayat_pesan):
                 if not p_text.strip():
                     continue
                 
-                # --- KOREKSI UTAMA: DETEKSI & PEMBERSIH KODE PAGAR (#) ---
+                # --- DETEKSI & PEMBERSIH KODE PAGAR (#) ---
                 match_heading = re.match(r'^(#{1,6})\s+(.*)$', p_text.strip())
                 if match_heading:
-                    level_pagar = len(match_heading.group(1)) # Menghitung jumlah '#'
-                    teks_judul = match_heading.group(2)      # Mengambil teks setelah '#'
-                    
-                    # Bersihkan dari sisa format bintang di dalam judul jika ada
-                    teks_judul_原始 = teks_judul.replace('**', '')
-                    
-                    # Mengonversi otomatis menjadi Heading bawaan Word (Level 1 sampai 3)
+                    level_pagar = len(match_heading.group(1))
+                    teks_judul = match_heading.group(2)
+                    teks_judul_bersih = teks_judul.replace('**', '')
                     level_word = min(level_pagar, 3) 
-                    doc.add_heading(teks_judul_原始, level=level_word)
+                    doc.add_heading(teks_judul_bersih, level=level_word)
                     continue
                 
                 # --- LOGIKA PEMBERSIH FORMAT BINTANG (**) PADA PARAGRAF ---
@@ -54,14 +50,11 @@ def buat_file_word(riwayat_pesan):
                 parts = re.split(r'(\*\*.*?\*\*)', p_text)
                 for part in parts:
                     if part.startswith('**') and part.endswith('**'):
-                        # Menghapus bintangnya dan menjadikannya format BOLD asli Word
                         clean_text = part.replace('**', '')
                         p.add_run(clean_text).bold = True
                     else:
-                        # Teks biasa tanpa format
                         p.add_run(part)
                         
-            # Garis pembatas antar percakapan
             p_line = doc.add_paragraph()
             p_line.add_run("_" * 40).italic = True
             
@@ -73,7 +66,7 @@ def buat_file_word(riwayat_pesan):
 # --- 3. PANEL CONTROL SIDEBAR ---
 with st.sidebar:
     st.title("🔮 Kontrol AI")
-    st.info("⚡ Status Server: Terhubung Otomatis (Mistral 3.5 Active)")
+    st.info("⚡ Status Server: Terhubung Otomatis (GPT OSS 120B Active)")
     
     st.divider()
     st.markdown("### 📥 Ekspor Dokumen")
@@ -82,7 +75,7 @@ with st.sidebar:
         st.download_button(
             label="📥 Download Jadi Word (.docx)",
             data=file_word,
-            file_name="Draf_LagosAi_Mistral.docx",
+            file_name="Draf_LagosAi_GPT_OSS.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             use_container_width=True
         )
@@ -98,29 +91,28 @@ with st.sidebar:
 # --- 4. PEMASANGAN API KEY NVIDIA LANGSUNG ---
 BASE_URL = "https://integrate.api.nvidia.com/v1"
 nvidia_api_key = "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"
-MODEL_NAME = "mistralai/mistral-large-2411"
+# MENGGUNAKAN INDENTIFIER RESMI ENDPOINT GPT OSS 120B DI NVIDIA NIM
+MODEL_NAME = "openai/gpt-oss-120b"
 
 client = OpenAI(base_url=BASE_URL, api_key=nvidia_api_key)
 
 # --- 5. MANAJEMEN MEMORI CHAT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "Anda adalah Mistral Large, model dense canggih dengan jendela konteks 128k token dari Mistral AI yang di-host di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
+        {"role": "system", "content": "Anda adalah GPT OSS 120B, model penalaran sumber terbuka canggih dari OpenAI yang berjalan di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
     ]
 
 # --- 6. TAMPILAN UTAMA INTERFASE CHAT ---
-st.title("🔮 Lagos AI 7.4 (Mistral 3.5)")
-st.caption("Workspace ditenagai oleh model mistralai/mistral-large-2411 (Konteks 128k Token via NVIDIA API).")
+st.title("🔮 Lagos AI 7.5 (GPT OSS 120B)")
+st.caption("Workspace ditenagai oleh open-weight model openai/gpt-oss-120b melalui NVIDIA API.")
 
-# Menampilkan riwayat chat secara beruntun ke bawah
 for message in st.session_state.messages:
     if message["role"] != "system":
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-# Tombol Lanjutkan
 if len(st.session_state.messages) > 1 and st.session_state.messages[-1]["role"] == "assistant":
-    col1, col2 = st.columns(2)  # FIX: Menggunakan format integer yang aman dari error koordinat layout
+    col1, col2 = st.columns(2)
     with col1:
         if st.button("📝 Lanjutkan Tulisan Ini", use_container_width=True):
             st.session_state.messages.append({"role": "user", "content": "Lanjutkan penjelasan tulisan Anda sebelumnya secara mengalir tanpa terputus."})
@@ -139,7 +131,7 @@ if user_input:
             response_stream = client.chat.completions.create(
                 model=MODEL_NAME,
                 messages=st.session_state.messages,
-                temperature=0.6,
+                temperature=0.5,
                 max_tokens=2048,
                 stream=True
             )
@@ -148,7 +140,7 @@ if user_input:
                 for chunk in response_stream:
                     if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
                         delta = chunk.choices[0].delta
-                        # Menggunakan getattr untuk proteksi biner chunk jika server mengirimkan sinyal keep-alive kosong
+                        # Menggunakan getattr untuk mengamankan data token stream dari crash biner
                         content = getattr(delta, 'content', '')
                         if content:
                             yield content
