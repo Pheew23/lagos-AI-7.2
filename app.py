@@ -105,9 +105,10 @@ for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-# --- PERBAIKAN DI SINI: Menambahkan angka 2 ke dalam st.columns() ---
+# --- BAGIAN CRITICAL FIX (Baris 97 ke atas) ---
 if len(st.session_state.messages) > 1 and st.session_state.messages[-1]["role"] == "assistant":
-    col1, col2 = st.columns(2)  # Sebelumnya st.columns() kosong yang memicu TypeError
+    # Diperbaiki dengan memberikan argumen integer 2 (membuat 2 kolom kosong)
+    col1, col2 = st.columns(2)  
     with col1:
         if st.button("📝 Lanjutkan Tulisan Ini", use_container_width=True):
             st.session_state.messages.append({"role": "user", "content": "Lanjutkan penjelasan tulisan Anda sebelumnya secara mengalir tanpa terputus."})
