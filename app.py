@@ -142,7 +142,7 @@ if user_input:
                 temperature=1,
                 top_p=0.95,
                 max_tokens=16384,
-                stream=false
+                stream=true
             )
             
             def teks_generator():
