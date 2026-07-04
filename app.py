@@ -146,11 +146,10 @@ if user_input:
   stream=False
 )
             
-            def teks_generator():
-                for chunk in response_stream:
-                    if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
-                        if chunk.choices[0].delta.content is not None:
-                            yield chunk.choices[0].delta.content
+            reasoning = getattr(completion.choices[0].message, "reasoning", None) or getattr(completion.choices[0].message, "reasoning_content", None)
+if reasoning:
+  print(reasoning)
+print(completion.choices[0].message.content)
 
             full_response = st.write_stream(teks_generator())
             st.session_state.messages.append({"role": "assistant", "content": full_response})
