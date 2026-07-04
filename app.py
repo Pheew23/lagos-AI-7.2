@@ -105,9 +105,7 @@ for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-# --- BAGIAN CRITICAL FIX (Baris 97 ke atas) ---
 if len(st.session_state.messages) > 1 and st.session_state.messages[-1]["role"] == "assistant":
-    # Diperbaiki dengan memberikan argumen integer 2 (membuat 2 kolom kosong)
     col1, col2 = st.columns(2)  
     with col1:
         if st.button("📝 Lanjutkan Tulisan Ini", use_container_width=True):
@@ -144,10 +142,10 @@ if user_input:
             response = requests.post(API_URL, headers=headers, json=payload, stream=True)
             
             if response.status_code != 200:
-                st.error(f"Server NVIDIA merespons dengan Error {response.status_code}. Silakan periksa kembali kuota atau status API Key Anda.")
+                st.error(f"Server NVIDIA merespons dengan Error {response.status_code}.")
                 st.code(response.text[:500], language="html")
             else:
-                def teks_generator_native():
+                def teks_generator_v4():
                     for line in response.iter_lines():
                         if line:
                             decoded_line = line.decode('utf-8').strip()
@@ -157,15 +155,23 @@ if user_input:
                                     break
                                 try:
                                     data_json = json.loads(data_str)
-                                    content = data_json['choices'][0]['delta'].get('content', '')
-                                    if content:
+                                    delta = data_json['choices'][0]['delta']
+                                    
+                                    # --- KUNCI UTAMA: Menangkap teks utama DAN teks penalaran ---
+                                    content = delta.get('content', '')
+                                    reasoning = delta.get('reasoning_content', '')
+                                    
+                                    if reasoning:
+                                        yield reasoning
+                                    elif content:
                                         yield content
                                 except:
                                     pass
 
-                full_response = st.write_stream(teks_generator_native())
+                full_response = st.write_stream(teks_generator_v4())
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
                 st.rerun()
             
         except Exception as e:
             st.error(f"Gagal memproses teks. Detail: {e}")
+            
