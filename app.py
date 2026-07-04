@@ -1,21 +1,20 @@
 import streamlit as st
-import requests
-import json
+from openai import OpenAI
 import io
 import re
 from docx import Document
 
 # --- 1. KONFIGURASI UTAMA STREAMLIT ---
 st.set_page_config(
-    page_title="MiniMax M3 Shared Workspace",
-    page_icon="⚡",
+    page_title="GLM-5.2 Shared Workspace",
+    page_icon="🔮",
     layout="wide"
 )
 
 # --- 2. FUNGSI UNTUK MEMBUAT FILE WORD (.DOCX) DENGAN FORMAT BENAR ---
 def buat_file_word(riwayat_pesan):
     doc = Document()
-    doc.add_heading('Draf Hasil Kerja AI - MiniMax M3 Workspace', level=0)
+    doc.add_heading('Draf Hasil Kerja AI - GLM-5.2 Workspace', level=0)
     
     for msg in riwayat_pesan:
         if msg["role"] == "system":
@@ -29,11 +28,14 @@ def buat_file_word(riwayat_pesan):
         elif msg["role"] == "assistant":
             doc.add_heading("Jawaban AI:", level=2)
             
+            # Memisahkan teks berdasarkan baris agar paragraf & judul tetap rapi
             paragraf_list = msg["content"].split('\n')
+            
             for p_text in paragraf_list:
                 if not p_text.strip():
                     continue
                 
+                # --- DETEKSI & PEMBERSIH KODE PAGAR (#) ---
                 match_heading = re.match(r'^(#{1,6})\s+(.*)$', p_text.strip())
                 if match_heading:
                     level_pagar = len(match_heading.group(1))
@@ -43,6 +45,7 @@ def buat_file_word(riwayat_pesan):
                     doc.add_heading(teks_judul_bersih, level=level_word)
                     continue
                 
+                # --- LOGIKA PEMBERSIH FORMAT BINTANG (**) PADA PARAGRAF ---
                 p = doc.add_paragraph()
                 parts = re.split(r'(\*\*.*?\*\*)', p_text)
                 for part in parts:
@@ -62,8 +65,8 @@ def buat_file_word(riwayat_pesan):
 
 # --- 3. PANEL CONTROL SIDEBAR ---
 with st.sidebar:
-    st.title("⚡ Kontrol AI")
-    st.info("⚡ Status Server: Terhubung Otomatis (MiniMax M3 Active)")
+    st.title("🔮 Kontrol AI")
+    st.info("⚡ Status Server: Terhubung Otomatis (GLM-5.2 Active)")
     
     st.divider()
     st.markdown("### 📥 Ekspor Dokumen")
@@ -72,7 +75,7 @@ with st.sidebar:
         st.download_button(
             label="📥 Download Jadi Word (.docx)",
             data=file_word,
-            file_name="Draf_LagosAi_MiniMaxM3.docx",
+            file_name="Draf_LagosAi_GLM52.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             use_container_width=True
         )
@@ -85,20 +88,22 @@ with st.sidebar:
             del st.session_state[key]
         st.rerun()
 
-# --- 4. KONFIGURASI INTERFACE MINIMAX M3 NVIDIA ---
-API_URL = "https://nvidia.com"
-nvidia_api_key = "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"
-MODEL_NAME = "minimaxai/minimax-m3"
+# --- 4. PEMASANGAN API KEY & KONFIGURASI GLM-5.2 NVIDIA ---
+BASE_URL = "https://integrate.api.nvidia.com/v1"
+nvidia_api_key = "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"
+MODEL_NAME = "z-ai/glm-5.2"
+
+client = OpenAI(base_url=BASE_URL, api_key=nvidia_api_key)
 
 # --- 5. MANAJEMEN MEMORI CHAT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "Anda adalah MiniMax M3, model bahasa canggih dari MiniMax yang di-host di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
+        {"role": "system", "content": "Anda adalah GLM-5.2, model bahasa besar flagship untuk penalaran panjang, agen kecerdasan buatan, dan koding dari Z.ai yang berjalan di atas infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
     ]
 
 # --- 6. TAMPILAN UTAMA INTERFASE CHAT ---
-st.title("🔮 Lagos AI 7.6 (MiniMax M3)")
-st.caption("Workspace ditenagai oleh model minimaxai/minimax-m3 melalui arsitektur Native Stream Gateway.")
+st.title("🔮 Lagos AI 7.7 (GLM-5.2)")
+st.caption("Workspace ditenagai oleh model z-ai/glm-5.2 dengan arsitektur Streaming OpenAI SDK.")
 
 for message in st.session_state.messages:
     if message["role"] != "system":
@@ -112,7 +117,7 @@ if len(st.session_state.messages) > 1 and st.session_state.messages[-1]["role"] 
             st.session_state.messages.append({"role": "user", "content": "Lanjutkan penjelasan tulisan Anda sebelumnya secara mengalir tanpa terputus."})
             st.rerun()
 
-# --- 7. PROSES INPUT & RESPONS CHAT VIA NATIVE STREAM PARSING ---
+# --- 7. PROSES INPUT & RESPONS CHAT ---
 user_input = st.chat_input("Ketik perintah teks Anda di sini...")
 
 if user_input:
@@ -122,57 +127,25 @@ if user_input:
         
     with st.chat_message("assistant"):
         try:
-            headers = {
-                "Authorization": f"Bearer {nvidia_api_key}",
-                "Content-Type": "application/json"
-            }
+            response_stream = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=st.session_state.messages,
+                temperature=0.3,
+                max_tokens=2048,
+                stream=True
+            )
             
-            payload = {
-                "model": MODEL_NAME,
-                "messages": st.session_state.messages,
-                "temperature": 0.2,
-                "max_tokens": 2048,
-                "stream": True
-            }
-            
-            response = requests.post(API_URL, headers=headers, json=payload, stream=True)
-            
-            if response.status_code != 200:
-                st.error(f"Server NVIDIA NIM Menolak Akses (Status {response.status_code}).")
-                st.code(response.text[:400], language="html")
-            else:
-                def teks_generator_minimax_fixed():
-                    for line in response.iter_lines():
-                        if not line:
-                            continue
-                        
-                        decoded_line = line.decode('utf-8').strip()
-                        if decoded_line.startswith("data:"):
-                            data_str = decoded_line[5:].strip()
-                            
-                            if data_str == "[DONE]":
-                                break
-                                
-                            try:
-                                data_json = json.loads(data_str)
-                                choices = data_json.get('choices', [])
-                                if choices:
-                                    delta = choices[0].get('delta', {})
-                                    
-                                    # --- KOREKSI KRITIKAL: Fallback pencarian teks multifield ---
-                                    content = delta.get('content', '')
-                                    text_alt = delta.get('text', '') # Struktur alternatif tangkapan MoE MiniMax
-                                    
-                                    if content:
-                                        yield content
-                                    elif text_alt:
-                                        yield text_alt
-                            except Exception:
-                                pass
+            def teks_generator_glm():
+                for chunk in response_stream:
+                    if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                        delta = chunk.choices[0].delta
+                        content = getattr(delta, 'content', '')
+                        if content:
+                            yield content
 
-                full_response = st.write_stream(teks_generator_minimax_fixed())
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-                st.rerun()
+            full_response = st.write_stream(teks_generator_glm())
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            st.rerun()
             
         except Exception as e:
-            st.error(f"Gagal memproses respons. Detail: {e}")
+            st.error(f"Gagal memproses teks. Detail: {e}")
