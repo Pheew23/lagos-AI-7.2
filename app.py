@@ -105,8 +105,9 @@ for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+# --- PERBAIKAN DI SINI: Menambahkan angka 2 ke dalam st.columns() ---
 if len(st.session_state.messages) > 1 and st.session_state.messages[-1]["role"] == "assistant":
-    col1, col2 = st.columns()
+    col1, col2 = st.columns(2)  # Sebelumnya st.columns() kosong yang memicu TypeError
     with col1:
         if st.button("📝 Lanjutkan Tulisan Ini", use_container_width=True):
             st.session_state.messages.append({"role": "user", "content": "Lanjutkan penjelasan tulisan Anda sebelumnya secara mengalir tanpa terputus."})
@@ -122,13 +123,11 @@ if user_input:
         
     with st.chat_message("assistant"):
         try:
-            # Membuat headers autentikasi API NVIDIA
             headers = {
                 "Authorization": f"Bearer {nvidia_api_key}",
                 "Content-Type": "application/json"
             }
             
-            # CRITICAL FIX: Menyuntikkan parameter khusus untuk server NIM DeepSeek V4
             payload = {
                 "model": MODEL_NAME,
                 "messages": st.session_state.messages,
@@ -141,10 +140,8 @@ if user_input:
                 }
             }
             
-            # Melakukan request POST dengan mode streaming aktif
             response = requests.post(API_URL, headers=headers, json=payload, stream=True)
             
-            # Validasi jika server mengembalikan error HTML atau kode HTTP selain 200
             if response.status_code != 200:
                 st.error(f"Server NVIDIA merespons dengan Error {response.status_code}. Silakan periksa kembali kuota atau status API Key Anda.")
                 st.code(response.text[:500], language="html")
@@ -152,7 +149,6 @@ if user_input:
                 def teks_generator_native():
                     for line in response.iter_lines():
                         if line:
-                            # Mengonversi baris byte mentah menjadi teks string
                             decoded_line = line.decode('utf-8').strip()
                             if decoded_line.startswith("data: "):
                                 data_str = decoded_line[6:]
@@ -172,4 +168,3 @@ if user_input:
             
         except Exception as e:
             st.error(f"Gagal memproses teks. Detail: {e}")
-            
