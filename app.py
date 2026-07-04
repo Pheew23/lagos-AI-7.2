@@ -88,7 +88,7 @@ with st.sidebar:
 # --- 4. KONFIGURASI DEEP INTERFACE MINIMAX M3 NVIDIA ---
 # CRITICAL FIX: Menggunakan endpoint perutean chat completions langsung
 API_URL = "https://nvidia.com"
-nvidia_api_key = "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"
+nvidia_api_key = "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"
 MODEL_NAME = "minimaxai/minimax-m3"
 
 # --- 5. MANAJEMEN MEMORI CHAT ---
