@@ -90,7 +90,7 @@ with st.sidebar:
 
 # --- 4. PEMASANGAN API KEY & KONFIGURASI MINIMAX M3 NVIDIA ---
 BASE_URL = "https://nvidia.com"
-nvidia_api_key = "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"
+nvidia_api_key = "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"
 # MENGGUNAKAN IDENTIFIER RESMI ENDPOINT MINIMAX M3 DI NVIDIA NIM
 MODEL_NAME = "minimaxai/minimax-m3"
 
