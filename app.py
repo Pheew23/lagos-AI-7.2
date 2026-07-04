@@ -90,7 +90,7 @@ with st.sidebar:
 
 # --- 4. PEMASANGAN API KEY NVIDIA LANGSUNG ---
 BASE_URL = "https://integrate.api.nvidia.com/v1"
-nvidia_api_key = "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"
+nvidia_api_key = "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"
 # MENGGUNAKAN INDENTIFIER RESMI ENDPOINT GPT OSS 120B DI NVIDIA NIM
 MODEL_NAME = "openai/gpt-oss-120b"
 
