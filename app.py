@@ -85,8 +85,7 @@ with st.sidebar:
             del st.session_state[key]
         st.rerun()
 
-# --- 4. KONFIGURASI DEEP INTERFACE MINIMAX M3 NVIDIA ---
-# CRITICAL FIX: Menggunakan endpoint perutean chat completions langsung
+# --- 4. KONFIGURASI INTERFACE MINIMAX M3 NVIDIA ---
 API_URL = "https://nvidia.com"
 nvidia_api_key = "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"
 MODEL_NAME = "minimaxai/minimax-m3"
@@ -94,12 +93,12 @@ MODEL_NAME = "minimaxai/minimax-m3"
 # --- 5. MANAJEMEN MEMORI CHAT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "Anda adalah MiniMax M3, model bahasa besar canggih dari MiniMax yang berjalan di atas infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
+        {"role": "system", "content": "Anda adalah MiniMax M3, model bahasa canggih dari MiniMax yang di-host di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
     ]
 
 # --- 6. TAMPILAN UTAMA INTERFASE CHAT ---
 st.title("🔮 Lagos AI 7.6 (MiniMax M3)")
-st.caption("Workspace ditenagai oleh model minimaxai/minimax-m3 melalui arsitektur HTTP Native Stream.")
+st.caption("Workspace ditenagai oleh model minimaxai/minimax-m3 melalui arsitektur Native Stream Gateway.")
 
 for message in st.session_state.messages:
     if message["role"] != "system":
@@ -113,7 +112,7 @@ if len(st.session_state.messages) > 1 and st.session_state.messages[-1]["role"] 
             st.session_state.messages.append({"role": "user", "content": "Lanjutkan penjelasan tulisan Anda sebelumnya secara mengalir tanpa terputus."})
             st.rerun()
 
-# --- 7. PROSES INPUT & RESPONS CHAT VIA NATIVE API GATEWAY ---
+# --- 7. PROSES INPUT & RESPONS CHAT VIA NATIVE STREAM PARSING ---
 user_input = st.chat_input("Ketik perintah teks Anda di sini...")
 
 if user_input:
@@ -128,25 +127,21 @@ if user_input:
                 "Content-Type": "application/json"
             }
             
-            # CRITICAL FIX: Menyuntikkan parameter bypass agar kluster server MoE MiniMax merespons token
             payload = {
                 "model": MODEL_NAME,
                 "messages": st.session_state.messages,
-                "temperature": 0.3,
+                "temperature": 0.2,
                 "max_tokens": 2048,
-                "stream": True,
-                "chat_template_kwargs": {
-                    "enable_thinking": True
-                }
+                "stream": True
             }
             
             response = requests.post(API_URL, headers=headers, json=payload, stream=True)
             
             if response.status_code != 200:
-                st.error(f"Server NVIDIA NIM menolak request (Status {response.status_code}).")
+                st.error(f"Server NVIDIA NIM Menolak Akses (Status {response.status_code}).")
                 st.code(response.text[:400], language="html")
             else:
-                def teks_generator_minimax():
+                def teks_generator_minimax_fixed():
                     for line in response.iter_lines():
                         if not line:
                             continue
@@ -163,16 +158,21 @@ if user_input:
                                 choices = data_json.get('choices', [])
                                 if choices:
                                     delta = choices[0].get('delta', {})
+                                    
+                                    # --- KOREKSI KRITIKAL: Fallback pencarian teks multifield ---
                                     content = delta.get('content', '')
+                                    text_alt = delta.get('text', '') # Struktur alternatif tangkapan MoE MiniMax
+                                    
                                     if content:
                                         yield content
+                                    elif text_alt:
+                                        yield text_alt
                             except Exception:
                                 pass
 
-                full_response = st.write_stream(teks_generator_minimax())
+                full_response = st.write_stream(teks_generator_minimax_fixed())
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
                 st.rerun()
             
         except Exception as e:
             st.error(f"Gagal memproses respons. Detail: {e}")
-            
