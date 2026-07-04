@@ -145,30 +145,41 @@ if user_input:
                 st.error(f"Server NVIDIA merespons dengan Error {response.status_code}.")
                 st.code(response.text[:500], language="html")
             else:
-                def teks_generator_v4():
+                def teks_generator_v4_fixed():
                     for line in response.iter_lines():
-                        if line:
-                            decoded_line = line.decode('utf-8').strip()
-                            if decoded_line.startswith("data: "):
-                                data_str = decoded_line[6:]
-                                if data_str == "[DONE]":
-                                    break
-                                try:
-                                    data_json = json.loads(data_str)
-                                    delta = data_json['choices'][0]['delta']
+                        if not line:
+                            continue
+                        
+                        # Decode byte mentah menjadi string bersih
+                        decoded_line = line.decode('utf-8').strip()
+                        
+                        # Deteksi penanda streaming
+                        if decoded_line.startswith("data:"):
+                            # Membersihkan space tidak beraturan di antara 'data:' dan tanda kurung kurawal JSON
+                            data_str = decoded_line[5:].strip()
+                            
+                            if data_str == "[DONE]":
+                                break
+                                
+                            try:
+                                data_json = json.loads(data_str)
+                                choices = data_json.get('choices', [])
+                                if choices:
+                                    delta = choices[0].get('delta', {})
                                     
-                                    # --- KUNCI UTAMA: Menangkap teks utama DAN teks penalaran ---
+                                    # Cek ketersediaan token isi utama atau teks penalaran
                                     content = delta.get('content', '')
                                     reasoning = delta.get('reasoning_content', '')
                                     
-                                    if reasoning:
-                                        yield reasoning
-                                    elif content:
+                                    if content:
                                         yield content
-                                except:
-                                    pass
+                                    elif reasoning:
+                                        yield reasoning
+                            except Exception:
+                                pass
 
-                full_response = st.write_stream(teks_generator_v4())
+                # Cetak teks ke antarmuka aplikasi web
+                full_response = st.write_stream(teks_generator_v4_fixed())
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
                 st.rerun()
             
