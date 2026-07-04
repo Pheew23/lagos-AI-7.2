@@ -4,15 +4,15 @@ from docx import Document
 
 # --- 1. KONFIGURASI UTAMA STREAMLIT ---
 st.set_page_config(
-    page_title="DeepSeek V4 Flash Shared Workspace",
-    page_icon="⚡",
+    page_title="Mistral 3.5 128B Shared Workspace",
+    page_icon="🔮",
     layout="wide"
 )
 
 # --- 2. FUNGSI UNTUK MEMBUAT FILE WORD (.DOCX) DENGAN FORMAT BENAR ---
 def buat_file_word(riwayat_pesan):
     doc = Document()
-    doc.add_heading('Draf Hasil Kerja AI - DeepSeek V4 Flash Workspace', level=0)
+    doc.add_heading('Draf Hasil Kerja AI - Mistral Workspace', level=0)
     
     for msg in riwayat_pesan:
         if msg["role"] == "system":
@@ -26,29 +26,40 @@ def buat_file_word(riwayat_pesan):
         elif msg["role"] == "assistant":
             doc.add_heading("Jawaban AI:", level=2)
             
+            # Memisahkan teks berdasarkan baris agar paragraf & judul tetap rapi
             paragraf_list = msg["content"].split('\n')
+            
             for p_text in paragraf_list:
                 if not p_text.strip():
                     continue
                 
+                # --- KOREKSI UTAMA: DETEKSI & PEMBERSIH KODE PAGAR (#) ---
                 match_heading = re.match(r'^(#{1,6})\s+(.*)$', p_text.strip())
                 if match_heading:
-                    level_pagar = len(match_heading.group(1))
-                    teks_judul = match_heading.group(2)
+                    level_pagar = len(match_heading.group(1)) # Menghitung jumlah '#'
+                    teks_judul = match_heading.group(2)      # Mengambil teks setelah '#'
+                    
+                    # Bersihkan dari sisa format bintang di dalam judul jika ada
                     teks_judul_bersih = teks_judul.replace('**', '')
+                    
+                    # Mengonversi otomatis menjadi Heading bawaan Word (Level 1 sampai 3)
                     level_word = min(level_pagar, 3) 
                     doc.add_heading(teks_judul_bersih, level=level_word)
                     continue
                 
+                # --- LOGIKA PEMBERSIH FORMAT BINTANG (**) PADA PARAGRAF ---
                 p = doc.add_paragraph()
                 parts = re.split(r'(\*\*.*?\*\*)', p_text)
                 for part in parts:
                     if part.startswith('**') and part.endswith('**'):
+                        # Menghapus bintangnya dan menjadikannya format BOLD asli Word
                         clean_text = part.replace('**', '')
                         p.add_run(clean_text).bold = True
                     else:
+                        # Teks biasa tanpa format
                         p.add_run(part)
                         
+            # Garis pembatas antar percakapan
             p_line = doc.add_paragraph()
             p_line.add_run("_" * 40).italic = True
             
@@ -59,8 +70,8 @@ def buat_file_word(riwayat_pesan):
 
 # --- 3. PANEL CONTROL SIDEBAR ---
 with st.sidebar:
-    st.title("⚡ Kontrol AI")
-    st.info("⚡ Status Server: Terhubung Otomatis (DeepSeek V4 Flash Active)")
+    st.title("🔮 Kontrol AI")
+    st.info("⚡ Status Server: Terhubung Otomatis (Mistral 128B Active)")
     
     st.divider()
     st.markdown("### 📥 Ekspor Dokumen")
@@ -69,7 +80,7 @@ with st.sidebar:
         st.download_button(
             label="📥 Download Jadi Word (.docx)",
             data=file_word,
-            file_name="Draf_LagosAi_DeepSeek_Flash.docx",
+            file_name="Draf_LagosAi_Mistral.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             use_container_width=True
         )
@@ -82,34 +93,38 @@ with st.sidebar:
             del st.session_state[key]
         st.rerun()
 
-# --- 4. KONFIGURASI DEEPSEEK V4 FLASH NVIDIA ---
-API_URL = "https://nvidia.com"
-nvidia_api_key = "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"
-MODEL_NAME = "deepseek-ai/deepseek-v4-flash"
+# --- 4. PEMASANGAN API KEY & KONFIGURASI MISTRAL NVIDIA ---
+BASE_URL = "https://nvidia.com"
+nvidia_api_key = "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"
+MODEL_NAME = "mistralai/mistral-large-2"
+
+client = OpenAI(base_url=BASE_URL, api_key=nvidia_api_key)
 
 # --- 5. MANAJEMEN MEMORI CHAT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "Anda adalah DeepSeek V4 Flash, model bahasa besar super cepat dari DeepSeek yang di-host di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
+        {"role": "system", "content": "Anda adalah Mistral Large, model bahasa canggih 128B dari Mistral AI yang di-host di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
     ]
 
 # --- 6. TAMPILAN UTAMA INTERFASE CHAT ---
-st.title("🔮 Lagos AI 7.3 (DeepSeek V4 Flash)")
-st.caption("Workspace ditenagai oleh model deepseek-ai/deepseek-v4-flash melalui NVIDIA API.")
+st.title("🔮 Lagos AI 7.4 (Mistral 128B)")
+st.caption("Workspace ditenagai oleh model mistralai/mistral-large-2 dengan jendela konteks hingga 128k token.")
 
+# Menampilkan riwayat chat secara beruntun ke bawah
 for message in st.session_state.messages:
     if message["role"] != "system":
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+# Tombol Lanjutkan
 if len(st.session_state.messages) > 1 and st.session_state.messages[-1]["role"] == "assistant":
-    col1, col2 = st.columns(2)  
+    col1, col2 = st.columns(2)
     with col1:
         if st.button("📝 Lanjutkan Tulisan Ini", use_container_width=True):
             st.session_state.messages.append({"role": "user", "content": "Lanjutkan penjelasan tulisan Anda sebelumnya secara mengalir tanpa terputus."})
             st.rerun()
 
-# --- 7. PROSES INPUT & RESPONS CHAT VIA NATIVE HTTP REQUESTS ---
+# --- 7. PROSES INPUT & RESPONS CHAT ---
 user_input = st.chat_input("Ketik perintah teks Anda di sini...")
 
 if user_input:
@@ -119,67 +134,24 @@ if user_input:
         
     with st.chat_message("assistant"):
         try:
-            headers = {
-                "Authorization": f"Bearer {nvidia_api_key}",
-                "Content-Type": "application/json"
-            }
+            response_stream = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=st.session_state.messages,
+                temperature=0.5,
+                max_tokens=2048,
+                stream=True
+            )
             
-            payload = {
-                "model": MODEL_NAME,
-                "messages": st.session_state.messages,
-                "temperature": 0.3,
-                "max_tokens": 2048,
-                "stream": True,
-                "chat_template_kwargs": {
-                    "enable_thinking": True,
-                    "thinking": True
-                }
-            }
-            
-            response = requests.post(API_URL, headers=headers, json=payload, stream=True)
-            
-            if response.status_code != 200:
-                st.error(f"Server NVIDIA merespons dengan Error {response.status_code}.")
-                st.code(response.text[:500], language="html")
-            else:
-                def teks_generator_v4_fixed():
-                    for line in response.iter_lines():
-                        if not line:
-                            continue
-                        
-                        # Decode byte mentah menjadi string bersih
-                        decoded_line = line.decode('utf-8').strip()
-                        
-                        # Deteksi penanda streaming
-                        if decoded_line.startswith("data:"):
-                            # Membersihkan space tidak beraturan di antara 'data:' dan tanda kurung kurawal JSON
-                            data_str = decoded_line[5:].strip()
-                            
-                            if data_str == "[DONE]":
-                                break
-                                
-                            try:
-                                data_json = json.loads(data_str)
-                                choices = data_json.get('choices', [])
-                                if choices:
-                                    delta = choices[0].get('delta', {})
-                                    
-                                    # Cek ketersediaan token isi utama atau teks penalaran
-                                    content = delta.get('content', '')
-                                    reasoning = delta.get('reasoning_content', '')
-                                    
-                                    if content:
-                                        yield content
-                                    elif reasoning:
-                                        yield reasoning
-                            except Exception:
-                                pass
+            def teks_generator():
+                for chunk in response_stream:
+                    if chunk.choices and len(chunk.choices) > 0:
+                        content = chunk.choices[0].delta.content
+                        if content is not None:
+                            yield content
 
-                # Cetak teks ke antarmuka aplikasi web
-                full_response = st.write_stream(teks_generator_v4_fixed())
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-                st.rerun()
+            full_response = st.write_stream(teks_generator())
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            st.rerun()
             
         except Exception as e:
             st.error(f"Gagal memproses teks. Detail: {e}")
-            
