@@ -6,15 +6,15 @@ from docx import Document
 
 # --- 1. KONFIGURASI UTAMA STREAMLIT ---
 st.set_page_config(
-    page_title="NVIDIA Kimi K2.6 Shared Workspace",
-    page_icon="🔮",
+    page_title="DeepSeek V4 Shared Workspace",
+    page_icon="🤖",
     layout="wide"
 )
 
 # --- 2. FUNGSI UNTUK MEMBUAT FILE WORD (.DOCX) DENGAN FORMAT BENAR ---
 def buat_file_word(riwayat_pesan):
     doc = Document()
-    doc.add_heading('Draf Hasil Kerja AI - Kimi K2.6 Workspace', level=0)
+    doc.add_heading('Draf Hasil Kerja AI - DeepSeek V4 Workspace', level=0)
     
     for msg in riwayat_pesan:
         if msg["role"] == "system":
@@ -36,16 +36,12 @@ def buat_file_word(riwayat_pesan):
                     continue
                 
                 # --- KOREKSI UTAMA: DETEKSI & PEMBERSIH KODE PAGAR (#) ---
-                # Jika baris diawali oleh satu atau beberapa '#'
                 match_heading = re.match(r'^(#{1,6})\s+(.*)$', p_text.strip())
                 if match_heading:
-                    level_pagar = len(match_heading.group(1)) # Menghitung jumlah '#'
-                    teks_judul = match_heading.group(2)      # Mengambil teks setelah '#'
+                    level_pagar = len(match_heading.group(1))
+                    teks_judul = match_heading.group(2)
                     
-                    # Bersihkan dari sisa format bintang di dalam judul jika ada
                     teks_judul_bersih = teks_judul.replace('**', '')
-                    
-                    # Mengonversi otomatis menjadi Heading bawaan Word (Level 1 sampai 3)
                     level_word = min(level_pagar, 3) 
                     doc.add_heading(teks_judul_bersih, level=level_word)
                     continue
@@ -55,11 +51,9 @@ def buat_file_word(riwayat_pesan):
                 parts = re.split(r'(\*\*.*?\*\*)', p_text)
                 for part in parts:
                     if part.startswith('**') and part.endswith('**'):
-                        # Menghapus bintangnya dan menjadikannya format BOLD asli Word
                         clean_text = part.replace('**', '')
                         p.add_run(clean_text).bold = True
                     else:
-                        # Teks biasa tanpa format
                         p.add_run(part)
                         
             # Garis pembatas antar percakapan
@@ -73,8 +67,8 @@ def buat_file_word(riwayat_pesan):
 
 # --- 3. PANEL CONTROL SIDEBAR ---
 with st.sidebar:
-    st.title("🔮 Kontrol AI")
-    st.info("⚡ Status Server: Terhubung Otomatis (API Key Tertanam)")
+    st.title("🤖 Kontrol AI")
+    st.info("⚡ Status Server: Terhubung Otomatis (DeepSeek V4 Active)")
     
     st.divider()
     st.markdown("### 📥 Ekspor Dokumen")
@@ -83,7 +77,7 @@ with st.sidebar:
         st.download_button(
             label="📥 Download Jadi Word (.docx)",
             data=file_word,
-            file_name="Draf_LagosAi.docx",
+            file_name="Draf_LagosAi_DeepSeek.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             use_container_width=True
         )
@@ -96,21 +90,22 @@ with st.sidebar:
             del st.session_state[key]
         st.rerun()
 
-# --- 4. PEMASANGAN API KEY NVIDIA LANGSUNG ---
+# --- 4. PEMASANGAN API KEY & KONFIGURASI DEEPSEEK V4 NVIDIA ---
 BASE_URL = "https://integrate.api.nvidia.com/v1"
-nvidia_api_key = "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"
+nvidia_api_key = "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"
+MODEL_NAME = "deepseek-ai/deepseek-v4"
 
 client = OpenAI(base_url=BASE_URL, api_key=nvidia_api_key)
 
 # --- 5. MANAJEMEN MEMORI CHAT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "Anda adalah Kimi K2.6, model bahasa besar canggih dari Moonshot AI yang di-host di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
+        {"role": "system", "content": "Anda adalah DeepSeek V4, model bahasa besar canggih yang di-host di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
     ]
 
 # --- 6. TAMPILAN UTAMA INTERFASE CHAT ---
-st.title("🔮 Lagos AI 7.2 (stabel)")
-st.caption("Workspace ditenagai oleh model moonshotai/kimi-k2.6 (Akses langsung tanpa input API Key).")
+st.title("🔮 Lagos AI 7.3 (DeepSeek V4)")
+st.caption("Workspace ditenagai oleh model deepseek-ai/deepseek-v4 melalui NVIDIA API.")
 
 # Menampilkan riwayat chat secara beruntun ke bawah
 for message in st.session_state.messages:
@@ -136,20 +131,19 @@ if user_input:
         
     with st.chat_message("assistant"):
         try:
-            completion = client.chat.completions.create(
-  model="deepseek-ai/deepseek-v4-flash",
-  messages=[{"role":"user","content":""}],
-  temperature=1,
-  top_p=0.95,
-  max_tokens=16384,
-  extra_body={"chat_template_kwargs":{"thinking":True,"reasoning_effort":"high"}},
-  stream=False
-)
+            response_stream = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=st.session_state.messages,
+                temperature=0.3,
+                max_tokens=2048,
+                stream=True
+            )
             
-            reasoning = getattr(completion.choices[0].message, "reasoning", None) or getattr(completion.choices[0].message, "reasoning_content", None)
-if reasoning:
-  print(reasoning)
-print(completion.choices[0].message.content)
+            def teks_generator():
+                for chunk in response_stream:
+                    if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                        if chunk.choices[0].delta.content is not None:
+                            yield chunk.choices[0].delta.content
 
             full_response = st.write_stream(teks_generator())
             st.session_state.messages.append({"role": "assistant", "content": full_response})
