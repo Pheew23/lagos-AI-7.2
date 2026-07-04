@@ -6,7 +6,7 @@ from docx import Document
 
 # --- 1. KONFIGURASI UTAMA STREAMLIT ---
 st.set_page_config(
-    page_title="GPT OSS 120B Shared Workspace",
+    page_title="Mistral Medium 3.5 Shared Workspace",
     page_icon="🔮",
     layout="wide"
 )
@@ -14,7 +14,7 @@ st.set_page_config(
 # --- 2. FUNGSI UNTUK MEMBUAT FILE WORD (.DOCX) DENGAN FORMAT BENAR ---
 def buat_file_word(riwayat_pesan):
     doc = Document()
-    doc.add_heading('Draf Hasil Kerja AI - GPT OSS 120B Workspace', level=0)
+    doc.add_heading('Draf Hasil Kerja AI - Mistral 3.5 Workspace', level=0)
     
     for msg in riwayat_pesan:
         if msg["role"] == "system":
@@ -66,7 +66,7 @@ def buat_file_word(riwayat_pesan):
 # --- 3. PANEL CONTROL SIDEBAR ---
 with st.sidebar:
     st.title("🔮 Kontrol AI")
-    st.info("⚡ Status Server: Terhubung Otomatis (GPT OSS 120B Active)")
+    st.info("⚡ Status Server: Terhubung Otomatis (Mistral 3.5 Active)")
     
     st.divider()
     st.markdown("### 📥 Ekspor Dokumen")
@@ -75,7 +75,7 @@ with st.sidebar:
         st.download_button(
             label="📥 Download Jadi Word (.docx)",
             data=file_word,
-            file_name="Draf_LagosAi_GPT_OSS.docx",
+            file_name="Draf_LagosAi_Mistral35.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             use_container_width=True
         )
@@ -88,23 +88,22 @@ with st.sidebar:
             del st.session_state[key]
         st.rerun()
 
-# --- 4. PEMASANGAN API KEY NVIDIA LANGSUNG ---
-BASE_URL = "https://integrate.api.nvidia.com/v1"
-nvidia_api_key = "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"
-# MENGGUNAKAN INDENTIFIER RESMI ENDPOINT GPT OSS 120B DI NVIDIA NIM
-MODEL_NAME = "openai/gpt-oss-120b"
+# --- 4. PEMASANGAN API KEY & KONFIGURASI MISTRAL 3.5 NVIDIA NIM ---
+BASE_URL = "https://nvidia.com"
+nvidia_api_key = "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"
+MODEL_NAME = "mistralai/mistral-medium-3.5-128b"
 
 client = OpenAI(base_url=BASE_URL, api_key=nvidia_api_key)
 
 # --- 5. MANAJEMEN MEMORI CHAT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "Anda adalah GPT OSS 120B, model penalaran sumber terbuka canggih dari OpenAI yang berjalan di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
+        {"role": "system", "content": "Anda adalah Mistral Medium 3.5, model dense flagship 128B dari Mistral AI di infrastruktur NVIDIA NIM. Jawab dalam Bahasa Indonesia secara terstruktur, cerdas, mendalam, dan natural."}
     ]
 
 # --- 6. TAMPILAN UTAMA INTERFASE CHAT ---
-st.title("🔮 Lagos AI 7.5 (GPT OSS 120B)")
-st.caption("Workspace ditenagai oleh open-weight model openai/gpt-oss-120b melalui NVIDIA API.")
+st.title("🔮 Lagos AI 7.4 (Mistral Medium 3.5)")
+st.caption("Workspace ditenagai oleh model mistralai/mistral-medium-3.5-128b melalui NVIDIA NIM API.")
 
 for message in st.session_state.messages:
     if message["role"] != "system":
@@ -131,16 +130,15 @@ if user_input:
             response_stream = client.chat.completions.create(
                 model=MODEL_NAME,
                 messages=st.session_state.messages,
-                temperature=0.5,
+                temperature=0.6,
                 max_tokens=2048,
                 stream=True
             )
             
             def teks_generator():
                 for chunk in response_stream:
-                    if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                    if hasattr(chunk, 'choices') and chunk.choices:
                         delta = chunk.choices[0].delta
-                        # Menggunakan getattr untuk mengamankan data token stream dari crash biner
                         content = getattr(delta, 'content', '')
                         if content:
                             yield content
