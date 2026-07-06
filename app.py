@@ -102,7 +102,7 @@ if "messages" not in st.session_state:
     ]
 
 # --- 6. TAMPILAN UTAMA INTERFASE CHAT ---
-st.title("🔮 Lagos AI 8.1 (GLM-5.2)")
+st.title("🔮 Lagos AI 8.1 ")
 st.caption("Workspace ditenagai oleh model z-ai/glm-5.2 dengan arsitektur Streaming OpenAI SDK.")
 
 for message in st.session_state.messages:
