@@ -131,7 +131,7 @@ if user_input:
                 model=MODEL_NAME,
                 messages=st.session_state.messages,
                 temperature=0.3,
-                max_tokens=2048,
+                max_tokens=512,
                 stream=True
             )
             
